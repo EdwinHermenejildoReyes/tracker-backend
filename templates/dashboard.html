@@ -165,8 +165,8 @@
                 <tr>
                     <td>{{ arrival.id }}</td>
                     <td>{{ arrival.timestamp|date:"d/m/Y H:i:s" }}</td>
-                    <td class="coords">{{ arrival.latitude }}</td>
-                    <td class="coords">{{ arrival.longitude }}</td>
+                    <td class="coords">{{ arrival.latitude|stringformat:"f" }}</td>
+                    <td class="coords">{{ arrival.longitude|stringformat:"f" }}</td>
                     <td>
                         {% if arrival.device_id %}
                             <span class="device">{{ arrival.device_id }}</span>
@@ -211,7 +211,7 @@
 
     const arrivals = [
         {% for arrival in arrivals %}
-        { lat: {{ arrival.latitude }}, lng: {{ arrival.longitude }}, ts: "{{ arrival.timestamp|date:'d/m/Y H:i:s' }}" }{% if not forloop.last %},{% endif %}
+        { lat: {{ arrival.latitude|stringformat:"f" }}, lng: {{ arrival.longitude|stringformat:"f" }}, ts: "{{ arrival.timestamp|date:'d/m/Y H:i:s' }}" }{% if not forloop.last %},{% endif %}
         {% endfor %}
     ];
 
