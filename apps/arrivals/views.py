@@ -29,6 +29,7 @@ class DashboardView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['arrivals'] = Arrival.objects.all()[:100]
-        context['total'] = Arrival.objects.count()
+        context['events'] = Arrival.objects.all()[:100]
+        context['total_enters'] = Arrival.objects.filter(event_type=Arrival.ENTER).count()
+        context['total_exits'] = Arrival.objects.filter(event_type=Arrival.EXIT).count()
         return context

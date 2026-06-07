@@ -45,7 +45,9 @@
         }
 
         .stat-label { font-size: .8rem; color: #666; text-transform: uppercase; letter-spacing: .05em; }
-        .stat-value { font-size: 2rem; font-weight: 700; color: #1976D2; margin-top: 4px; }
+        .stat-value { font-size: 2rem; font-weight: 700; margin-top: 4px; }
+        .stat-enter { color: #2E7D32; }
+        .stat-exit  { color: #C62828; }
 
         #map {
             height: 340px;
@@ -111,6 +113,24 @@
         .coords { font-family: monospace; font-size: .85rem; color: #555; }
 
         .device { background: #e3f2fd; color: #1565C0; border-radius: 6px; padding: 2px 8px; font-size: .8rem; }
+
+        .tag-enter { background: #E8F5E9; color: #2E7D32; border-radius: 6px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
+        .tag-exit  { background: #FFEBEE; color: #C62828; border-radius: 6px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
+
+        .legend {
+            display: flex;
+            gap: 16px;
+            font-size: .8rem;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .legend-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
     </style>
 </head>
 <body>
@@ -127,33 +147,33 @@
 
     <div class="grid">
         <div class="card">
-            <div class="stat-label">Total de llegadas</div>
-            <div class="stat-value">{{ total }}</div>
+            <div class="stat-label">Entradas registradas</div>
+            <div class="stat-value stat-enter">{{ total_enters }}</div>
         </div>
         <div class="card">
-            <div class="stat-label">Última llegada</div>
-            <div class="stat-value" style="font-size:1.1rem; padding-top:8px;">
-                {% if arrivals %}
-                    {{ arrivals.0.timestamp|date:"d/m/Y H:i" }}
-                {% else %}
-                    —
-                {% endif %}
-            </div>
+            <div class="stat-label">Salidas registradas</div>
+            <div class="stat-value stat-exit">{{ total_exits }}</div>
         </div>
     </div>
 
+    <div class="legend">
+        <span><span class="legend-dot" style="background:#2E7D32"></span>Entrada</span>
+        <span><span class="legend-dot" style="background:#C62828"></span>Salida</span>
+        <span><span class="legend-dot" style="background:#1976D2"></span>Geocerca</span>
+    </div>
     <div id="map"></div>
 
     <div class="table-card">
         <div class="table-header">
-            <h2>Historial de llegadas</h2>
+            <h2>Historial de eventos</h2>
             <button class="refresh-btn" onclick="location.reload()">Actualizar</button>
         </div>
-        {% if arrivals %}
+        {% if events %}
         <table>
             <thead>
                 <tr>
                     <th>#</th>
+                    <th>Tipo</th>
                     <th>Fecha y hora</th>
                     <th>Latitud</th>
                     <th>Longitud</th>
@@ -161,15 +181,22 @@
                 </tr>
             </thead>
             <tbody>
-                {% for arrival in arrivals %}
+                {% for event in events %}
                 <tr>
-                    <td>{{ arrival.id }}</td>
-                    <td>{{ arrival.timestamp|date:"d/m/Y H:i:s" }}</td>
-                    <td class="coords">{{ arrival.latitude|stringformat:"f" }}</td>
-                    <td class="coords">{{ arrival.longitude|stringformat:"f" }}</td>
+                    <td>{{ event.id }}</td>
                     <td>
-                        {% if arrival.device_id %}
-                            <span class="device">{{ arrival.device_id }}</span>
+                        {% if event.event_type == 'enter' %}
+                            <span class="tag-enter">Entrada</span>
+                        {% else %}
+                            <span class="tag-exit">Salida</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ event.timestamp|date:"d/m/Y H:i:s" }}</td>
+                    <td class="coords">{{ event.latitude|stringformat:"f" }}</td>
+                    <td class="coords">{{ event.longitude|stringformat:"f" }}</td>
+                    <td>
+                        {% if event.device_id %}
+                            <span class="device">{{ event.device_id }}</span>
                         {% else %}
                             <span style="color:#ccc">—</span>
                         {% endif %}
@@ -179,7 +206,7 @@
             </tbody>
         </table>
         {% else %}
-        <div class="empty">Sin llegadas registradas aún.</div>
+        <div class="empty">Sin eventos registrados aún.</div>
         {% endif %}
     </div>
 
@@ -189,7 +216,7 @@
 <script>
     const TARGET_LAT = -2.1812473;
     const TARGET_LNG = -79.8146685;
-    const RADIUS_M   = 100;
+    const RADIUS_M   = 50;
 
     const map = L.map('map').setView([TARGET_LAT, TARGET_LNG], 16);
 
@@ -209,20 +236,21 @@
         .addTo(map)
         .bindPopup('Ubicación objetivo');
 
-    const arrivals = [
-        {% for arrival in arrivals %}
-        { lat: {{ arrival.latitude|stringformat:"f" }}, lng: {{ arrival.longitude|stringformat:"f" }}, ts: "{{ arrival.timestamp|date:'d/m/Y H:i:s' }}" }{% if not forloop.last %},{% endif %}
+    const events = [
+        {% for event in events %}
+        { lat: {{ event.latitude|stringformat:"f" }}, lng: {{ event.longitude|stringformat:"f" }}, ts: "{{ event.timestamp|date:'d/m/Y H:i:s' }}", type: "{{ event.event_type }}" }{% if not forloop.last %},{% endif %}
         {% endfor %}
     ];
 
-    arrivals.forEach(function(a) {
-        L.circleMarker([a.lat, a.lng], {
+    events.forEach(function(e) {
+        const isEnter = e.type === 'enter';
+        L.circleMarker([e.lat, e.lng], {
             radius: 6,
-            color: '#E53935',
-            fillColor: '#E53935',
+            color: isEnter ? '#2E7D32' : '#C62828',
+            fillColor: isEnter ? '#2E7D32' : '#C62828',
             fillOpacity: 0.8,
             weight: 2
-        }).addTo(map).bindPopup('Llegada: ' + a.ts);
+        }).addTo(map).bindPopup((isEnter ? 'Entrada' : 'Salida') + ': ' + e.ts);
     });
 </script>
 

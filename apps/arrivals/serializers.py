@@ -5,5 +5,5 @@ from .models import Arrival
 class ArrivalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Arrival
-        fields = ['id', 'timestamp', 'latitude', 'longitude', 'device_id']
+        fields = ['id', 'timestamp', 'latitude', 'longitude', 'device_id', 'event_type']
         read_only_fields = ['id', 'timestamp']
