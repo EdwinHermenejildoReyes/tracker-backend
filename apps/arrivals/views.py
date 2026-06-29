@@ -32,4 +32,5 @@ class DashboardView(TemplateView):
         context['events'] = Arrival.objects.all()[:100]
         context['total_enters'] = Arrival.objects.filter(event_type=Arrival.ENTER).count()
         context['total_exits'] = Arrival.objects.filter(event_type=Arrival.EXIT).count()
+        context['total_stationary'] = Arrival.objects.filter(event_type=Arrival.STATIONARY).count()
         return context

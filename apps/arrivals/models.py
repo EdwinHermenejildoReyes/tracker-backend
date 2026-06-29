@@ -4,7 +4,8 @@ from django.db import models
 class Arrival(models.Model):
     ENTER = 'enter'
     EXIT = 'exit'
-    EVENT_CHOICES = [(ENTER, 'Entrada'), (EXIT, 'Salida')]
+    STATIONARY = 'stationary'
+    EVENT_CHOICES = [(ENTER, 'Entrada'), (EXIT, 'Salida'), (STATIONARY, 'Estacionario')]
 
     timestamp = models.DateTimeField(auto_now_add=True)
     latitude = models.FloatField()
