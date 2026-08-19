@@ -11,7 +11,7 @@ from .serializers import ArrivalSerializer
 
 _POI_LAT = -2.132459
 _POI_LNG = -79.906834
-_POI_RADIUS_M = 20
+_POI_RADIUS_M = 3
 
 
 def _haversine_m(lat1, lng1, lat2, lng2):
