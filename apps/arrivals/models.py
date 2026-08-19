@@ -7,6 +7,7 @@ class Arrival(models.Model):
     STATIONARY = 'stationary'
     EVENT_CHOICES = [(ENTER, 'Entrada'), (EXIT, 'Salida'), (STATIONARY, 'Estacionario')]
 
+    event_id = models.UUIDField(unique=True, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     latitude = models.FloatField()
     longitude = models.FloatField()

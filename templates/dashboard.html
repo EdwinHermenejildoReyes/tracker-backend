@@ -133,6 +133,10 @@
             border-radius: 50%;
             margin-right: 4px;
         }
+
+        tr.row-alert td { background: #FFEBEE !important; }
+        tr.row-alert { border-left: 4px solid #C62828; }
+        tr.row-alert:hover td { background: #FFCDD2 !important; }
     </style>
 </head>
 <body>
@@ -167,6 +171,7 @@
         <span><span class="legend-dot" style="background:#C62828"></span>Salida</span>
         <span><span class="legend-dot" style="background:#E65100"></span>Estacionario</span>
         <span><span class="legend-dot" style="background:#1976D2"></span>Geocerca</span>
+        <span><span class="legend-dot" style="background:#C62828; border: 2px solid #B71C1C"></span>Zona de alerta</span>
     </div>
     <div id="map"></div>
 
@@ -189,7 +194,7 @@
             </thead>
             <tbody>
                 {% for event in events %}
-                <tr>
+                <tr{% if event.near_poi %} class="row-alert"{% endif %}>
                     <td>{{ event.id }}</td>
                     <td>
                         {% if event.event_type == 'enter' %}
@@ -226,6 +231,9 @@
     const TARGET_LAT = -2.1812473;
     const TARGET_LNG = -79.8146685;
     const RADIUS_M   = 50;
+    const POI_LAT    = {{ poi_lat }};
+    const POI_LNG    = {{ poi_lng }};
+    const POI_RADIUS = {{ poi_radius_m }};
 
     const map = L.map('map').setView([TARGET_LAT, TARGET_LNG], 16);
 
@@ -239,11 +247,20 @@
         fillColor: '#1976D2',
         fillOpacity: 0.15,
         weight: 2
-    }).addTo(map).bindPopup('Geocerca — radio 100 m');
+    }).addTo(map).bindPopup('Geocerca — radio 50 m');
 
     L.marker([TARGET_LAT, TARGET_LNG])
         .addTo(map)
         .bindPopup('Ubicación objetivo');
+
+    L.circle([POI_LAT, POI_LNG], {
+        radius: POI_RADIUS,
+        color: '#C62828',
+        fillColor: '#C62828',
+        fillOpacity: 0.2,
+        weight: 2,
+        dashArray: '6 4'
+    }).addTo(map).bindPopup('Zona de alerta — radio ' + POI_RADIUS + ' m');
 
     const events = [
         {% for event in events %}
