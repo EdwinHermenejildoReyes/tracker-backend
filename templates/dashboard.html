@@ -115,9 +115,12 @@
 
         .device { background: #e3f2fd; color: #1565C0; border-radius: 6px; padding: 2px 8px; font-size: .8rem; }
 
-        .tag-enter       { background: #E8F5E9; color: #2E7D32;  border-radius: 6px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
-        .tag-exit        { background: #FFEBEE; color: #C62828;  border-radius: 6px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
-        .tag-stationary  { background: #FFF3E0; color: #E65100;  border-radius: 6px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
+        .tag-enter           { background: #E8F5E9; color: #2E7D32;  border-radius: 6px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
+        .tag-exit            { background: #FFEBEE; color: #C62828;  border-radius: 6px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
+        .tag-stationary      { background: #FFF3E0; color: #E65100;  border-radius: 6px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
+        .tag-stationary-end  { background: #EDE7F6; color: #4527A0;  border-radius: 6px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
+        .duration            { font-size: .85rem; color: #4527A0; font-weight: 600; }
+        .duration-empty      { color: #ccc; }
 
         .legend {
             display: flex;
@@ -187,6 +190,7 @@
                     <th>#</th>
                     <th>Tipo</th>
                     <th>Fecha y hora</th>
+                    <th>Duración</th>
                     <th>Latitud</th>
                     <th>Longitud</th>
                     <th>Dispositivo</th>
@@ -201,11 +205,20 @@
                             <span class="tag-enter">Entrada</span>
                         {% elif event.event_type == 'exit' %}
                             <span class="tag-exit">Salida</span>
+                        {% elif event.event_type == 'stationary_end' %}
+                            <span class="tag-stationary-end">Fin estacionario</span>
                         {% else %}
                             <span class="tag-stationary">Estacionario</span>
                         {% endif %}
                     </td>
                     <td>{{ event.timestamp|date:"d/m/Y H:i:s" }}</td>
+                    <td>
+                        {% if event.duration_display %}
+                            <span class="duration">{{ event.duration_display }}</span>
+                        {% else %}
+                            <span class="duration-empty">—</span>
+                        {% endif %}
+                    </td>
                     <td class="coords">{{ event.latitude|stringformat:"f" }}</td>
                     <td class="coords">{{ event.longitude|stringformat:"f" }}</td>
                     <td>
