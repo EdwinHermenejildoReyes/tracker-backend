@@ -244,8 +244,8 @@
     const TARGET_LAT = -2.1812473;
     const TARGET_LNG = -79.8146685;
     const RADIUS_M   = 50;
-    const POI_LAT    = {{ poi_lat }};
-    const POI_LNG    = {{ poi_lng }};
+    const POI_LAT    = {{ poi_lat|stringformat:"f" }};
+    const POI_LNG    = {{ poi_lng|stringformat:"f" }};
     const POI_RADIUS = {{ poi_radius_m }};
 
     const map = L.map('map').setView([TARGET_LAT, TARGET_LNG], 16);
