@@ -68,9 +68,13 @@
         .table-header {
             padding: 16px 24px;
             border-bottom: 1px solid #eee;
+        }
+
+        .table-header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 12px;
         }
 
         .table-header h2 { font-size: 1rem; font-weight: 600; }
@@ -86,6 +90,102 @@
         }
 
         .refresh-btn:hover { background: #1565C0; }
+
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-divider {
+            width: 1px;
+            height: 28px;
+            background: #e0e0e0;
+            flex-shrink: 0;
+        }
+
+        /* Search form */
+        .search-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-bar label {
+            font-size: .8rem;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .search-bar input[type="text"] {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: .85rem;
+            width: 160px;
+            outline: none;
+            transition: border-color .15s;
+        }
+
+        .search-bar input[type="text"]:focus { border-color: #1976D2; }
+
+        .search-btn {
+            background: #1976D2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: .85rem;
+            cursor: pointer;
+        }
+
+        .search-btn:hover { background: #1565C0; }
+
+        .clear-link {
+            font-size: .82rem;
+            color: #999;
+            text-decoration: none;
+            padding: 6px 4px;
+        }
+
+        .clear-link:hover { color: #C62828; }
+
+        /* POI filter button */
+        .poi-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: .85rem;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1.5px solid #C62828;
+            color: #C62828;
+            background: white;
+            white-space: nowrap;
+            transition: background .15s, color .15s;
+        }
+
+        .poi-btn:hover { background: #FFEBEE; }
+
+        .poi-btn-active {
+            background: #C62828;
+            color: white;
+        }
+
+        .poi-btn-active:hover { background: #B71C1C; }
+
+        .poi-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
 
         table { width: 100%; border-collapse: collapse; }
 
@@ -140,6 +240,35 @@
         tr.row-alert td { background: #FFEBEE !important; }
         tr.row-alert { border-left: 4px solid #C62828; }
         tr.row-alert:hover td { background: #FFCDD2 !important; }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            border-top: 1px solid #eee;
+            font-size: .85rem;
+            color: #666;
+        }
+
+        .pagination-controls { display: flex; gap: 6px; align-items: center; }
+
+        .page-btn {
+            display: inline-block;
+            padding: 5px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            color: #1976D2;
+            text-decoration: none;
+            font-size: .85rem;
+            background: white;
+            transition: background .1s;
+        }
+
+        .page-btn:hover { background: #e3f2fd; }
+        .page-btn.disabled { color: #ccc; border-color: #eee; pointer-events: none; }
+        .page-btn.active { background: #1976D2; color: white; border-color: #1976D2; }
     </style>
 </head>
 <body>
@@ -180,9 +309,34 @@
 
     <div class="table-card">
         <div class="table-header">
-            <h2>Historial de eventos</h2>
-            <button class="refresh-btn" onclick="location.reload()">Actualizar</button>
+            <div class="table-header-row">
+                <h2>Historial de eventos</h2>
+                <button class="refresh-btn" onclick="location.reload()">Actualizar</button>
+            </div>
+            <div class="filter-bar">
+                <form method="get" action="" class="search-bar">
+                    <label for="lat-input">Latitud</label>
+                    <input id="lat-input" type="text" name="lat" value="{{ lat_q }}" placeholder="ej. -2.181" {% if near_poi_filter %}disabled{% endif %}>
+                    <label for="lng-input">Longitud</label>
+                    <input id="lng-input" type="text" name="lng" value="{{ lng_q }}" placeholder="ej. -79.814" {% if near_poi_filter %}disabled{% endif %}>
+                    <button type="submit" class="search-btn" {% if near_poi_filter %}disabled style="opacity:.45;cursor:default"{% endif %}>Buscar</button>
+                    {% if lat_q or lng_q %}
+                    <a href="/" class="clear-link">Limpiar</a>
+                    {% endif %}
+                </form>
+                <div class="filter-divider"></div>
+                {% if near_poi_filter %}
+                    <a href="/" class="poi-btn poi-btn-active">
+                        <span class="poi-dot"></span> Zona de alerta ±{{ poi_radius_m }}m &nbsp;×
+                    </a>
+                {% else %}
+                    <a href="?poi=1" class="poi-btn">
+                        <span class="poi-dot"></span> Zona de alerta ±{{ poi_radius_m }}m
+                    </a>
+                {% endif %}
+            </div>
         </div>
+
         {% if events %}
         <table>
             <thead>
@@ -232,8 +386,55 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <div class="pagination">
+            <span>
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                &nbsp;·&nbsp; {{ page_obj.paginator.count }} resultado{% if page_obj.paginator.count != 1 %}s{% endif %}
+            </span>
+            <div class="pagination-controls">
+                {% if page_obj.has_previous %}
+                    {% if near_poi_filter %}
+                        <a class="page-btn" href="?page=1&poi=1">«</a>
+                        <a class="page-btn" href="?page={{ page_obj.previous_page_number }}&poi=1">Anterior</a>
+                    {% else %}
+                        <a class="page-btn" href="?page=1&lat={{ lat_q }}&lng={{ lng_q }}">«</a>
+                        <a class="page-btn" href="?page={{ page_obj.previous_page_number }}&lat={{ lat_q }}&lng={{ lng_q }}">Anterior</a>
+                    {% endif %}
+                {% else %}
+                    <span class="page-btn disabled">«</span>
+                    <span class="page-btn disabled">Anterior</span>
+                {% endif %}
+
+                <span class="page-btn active">{{ page_obj.number }}</span>
+
+                {% if page_obj.has_next %}
+                    {% if near_poi_filter %}
+                        <a class="page-btn" href="?page={{ page_obj.next_page_number }}&poi=1">Siguiente</a>
+                        <a class="page-btn" href="?page={{ page_obj.paginator.num_pages }}&poi=1">»</a>
+                    {% else %}
+                        <a class="page-btn" href="?page={{ page_obj.next_page_number }}&lat={{ lat_q }}&lng={{ lng_q }}">Siguiente</a>
+                        <a class="page-btn" href="?page={{ page_obj.paginator.num_pages }}&lat={{ lat_q }}&lng={{ lng_q }}">»</a>
+                    {% endif %}
+                {% else %}
+                    <span class="page-btn disabled">Siguiente</span>
+                    <span class="page-btn disabled">»</span>
+                {% endif %}
+            </div>
+        </div>
+
         {% else %}
-        <div class="empty">Sin eventos registrados aún.</div>
+        <div class="empty">
+            {% if near_poi_filter %}
+                No hay eventos dentro de la zona de alerta (±{{ poi_radius_m }}m).
+                <a href="/" style="color:#1976D2; margin-left:8px;">Ver todos</a>
+            {% elif lat_q or lng_q %}
+                Sin resultados para la búsqueda.
+                <a href="/" style="color:#1976D2; margin-left:8px;">Ver todos</a>
+            {% else %}
+                Sin eventos registrados aún.
+            {% endif %}
+        </div>
         {% endif %}
     </div>
 

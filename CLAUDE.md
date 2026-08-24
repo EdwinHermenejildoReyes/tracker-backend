@@ -64,7 +64,14 @@ nginx/           ← nginx.conf
 
 ## Arrival Model
 
-The `Arrival` model stores: `latitude`, `longitude`, `device_id`, `event_type`, and `timestamp`. Valid `event_type` values: `"enter"`, `"exit"`, `"stationary"` (stationary is sent by the Android app when the device has been motionless outside the zone for 10+ minutes).
+Fields: `event_id` (UUID, unique, idempotency key), `timestamp`, `latitude`, `longitude`, `device_id`, `event_type`, `duration_seconds`.
+
+Valid `event_type` values:
+- `"enter"` / `"exit"` — zone crossing, reported by both app mechanisms
+- `"stationary"` — device motionless outside zone for 10+ minutes
+- `"stationary_end"` — stationary episode ended; `duration_seconds` is populated with total stationary time in seconds
+
+The dashboard shows the last 100 events (`Arrival.objects.all()[:100]`) and annotates each with a `near_poi` boolean computed against a hardcoded secondary POI at lat `-2.132459`, lng `-79.906834` (6 m radius), defined directly in `views.py`.
 
 ## API Authentication
 

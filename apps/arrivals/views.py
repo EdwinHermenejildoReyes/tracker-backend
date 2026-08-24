@@ -1,6 +1,9 @@
 import math
 
 from django.conf import settings
+from django.core.paginator import Paginator
+from django.db.models import CharField
+from django.db.models.functions import Cast
 from django.views.generic import TemplateView
 from rest_framework import generics, status
 from rest_framework.permissions import BasePermission
@@ -11,7 +14,9 @@ from .serializers import ArrivalSerializer
 
 _POI_LAT = -2.132459
 _POI_LNG = -79.906834
-_POI_RADIUS_M = 3
+_POI_RADIUS_M = 6
+
+PAGE_SIZE = 20
 
 
 def _haversine_m(lat1, lng1, lat2, lng2):
@@ -55,12 +60,55 @@ class DashboardView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        events = list(Arrival.objects.all()[:100])
-        for event in events:
-            event.near_poi = (
-                _haversine_m(event.latitude, event.longitude, _POI_LAT, _POI_LNG) <= _POI_RADIUS_M
+        lat_q = self.request.GET.get('lat', '').strip()
+        lng_q = self.request.GET.get('lng', '').strip()
+        near_poi_filter = self.request.GET.get('poi') == '1'
+        page_num = self.request.GET.get('page', 1)
+
+        qs = Arrival.objects.all()
+
+        if near_poi_filter:
+            # Bounding-box pre-filter in DB (0.0002° ≈ 22 m), then exact haversine in Python
+            delta = 0.0002
+            candidates = list(
+                qs.filter(
+                    latitude__gte=_POI_LAT - delta,
+                    latitude__lte=_POI_LAT + delta,
+                    longitude__gte=_POI_LNG - delta,
+                    longitude__lte=_POI_LNG + delta,
+                )
             )
-        context['events'] = events
+            paginatable = [
+                e for e in candidates
+                if _haversine_m(e.latitude, e.longitude, _POI_LAT, _POI_LNG) <= _POI_RADIUS_M
+            ]
+            for e in paginatable:
+                e.near_poi = True
+            paginator = Paginator(paginatable, PAGE_SIZE)
+            page_obj = paginator.get_page(page_num)
+        else:
+            if lat_q or lng_q:
+                qs = qs.annotate(
+                    lat_str=Cast('latitude', output_field=CharField()),
+                    lng_str=Cast('longitude', output_field=CharField()),
+                )
+                if lat_q:
+                    qs = qs.filter(lat_str__contains=lat_q)
+                if lng_q:
+                    qs = qs.filter(lng_str__contains=lng_q)
+
+            paginator = Paginator(qs, PAGE_SIZE)
+            page_obj = paginator.get_page(page_num)
+            for event in page_obj:
+                event.near_poi = (
+                    _haversine_m(event.latitude, event.longitude, _POI_LAT, _POI_LNG) <= _POI_RADIUS_M
+                )
+
+        context['events'] = page_obj
+        context['page_obj'] = page_obj
+        context['lat_q'] = lat_q
+        context['lng_q'] = lng_q
+        context['near_poi_filter'] = near_poi_filter
         context['total_enters'] = Arrival.objects.filter(event_type=Arrival.ENTER).count()
         context['total_exits'] = Arrival.objects.filter(event_type=Arrival.EXIT).count()
         context['total_stationary'] = Arrival.objects.filter(event_type=Arrival.STATIONARY).count()
